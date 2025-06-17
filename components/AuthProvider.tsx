@@ -13,14 +13,14 @@ type AuthCtx = {
   logout: () => Promise<void>
 }
 
-const AuthContext = createContext<AuthCtx>(null)
+const AuthContext = createContext<AuthCtx|null>(null)
 const useAuth = () => useContext(AuthContext)
 
 const AuthProvider = ({ children }: { children: ReactNode }) => {
   const auth = supabase.auth
 
   const [loading, setLoading] = useState<boolean>(true)
-  const [session, setSession] = useState<Session>(null)
+  const [session, setSession] = useState<Session>(null as unknown as Session)
 
 //session処理の実行中は画面を表示しないようにする
   useEffect(() => {
@@ -36,9 +36,9 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     })()
     const {data: { subscription },
     } = auth.onAuthStateChange((_event, session) => {
-      setSession(session)
+      setSession(session as unknown as Session)
       if (_event === "SIGNED_OUT") {
-        setSession(null)
+        setSession(null as unknown as Session)
       }
     })
     return () => {
@@ -54,7 +54,7 @@ const AuthProvider = ({ children }: { children: ReactNode }) => {
     await auth.signUp({ email: email, password: password })
   }
 
-  const logout =  () => {
+   const logout =  async() => {
     auth.signOut()
   }
 
