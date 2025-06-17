@@ -1,0 +1,37 @@
+name: Staging Deploy
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: GCP Authenticate
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{secrets.DEV_GCP_SA_KEY}}
+
+      - name: Configure docker to use the gcloud cli
+        run: gcloud auth configure-docker --quiet
+
+      - name: Build Image and Deploy to Cloud Run
+        run: |
+          date_time=$(date +%Y%m%d%H%M%S)
+          IMAGE=gcr.io/${{secrets.DEV_GCP_PROJECT_ID}}/dev-web-view-experiment:${date_time}
+          docker build --build-arg NODE_ENV="staging" -t ${IMAGE} .
+          docker push ${IMAGE}
+          gcloud run deploy dev-web-view-experiment\
+            --image ${IMAGE} \
+            --platform managed \
+            --region ${{secrets.DEV_GCP_REGION}} \
+            --port 3050 \
+            --project ${{secrets.DEV_GCP_PROJECT_ID}} \
+            --max-instances 1 \
+            --quiet
