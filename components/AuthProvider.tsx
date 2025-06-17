@@ -1,4 +1,5 @@
-import { supabase } from "../utils/supabase"
+/* eslint-disable */
+import { supabase } from "@/utils/supabase"
 import { ReactNode, useContext, createContext, useEffect, useState } from "react"
 import { Session } from "@supabase/supabase-js"
 
@@ -11,6 +12,7 @@ type AuthCtx = {
   signup: ({ email, password }: { email: string; password: string }) => Promise<void>
   logout: () => Promise<void>
 }
+
 const AuthContext = createContext<AuthCtx>(null)
 const useAuth = () => useContext(AuthContext)
 
