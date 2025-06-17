@@ -1,11 +1,11 @@
 import { supabase } from "../utils/supabase"
 import { ReactNode, useContext, createContext, useEffect, useState } from "react"
 import { Session } from "@supabase/supabase-js"
-import { useRouter } from "next/router"
 
 type AuthCtx = {
   session: Session
   loading: boolean
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setLoading: any
   login: ({ email, password }: { email: string; password: string }) => Promise<void>
   signup: ({ email, password }: { email: string; password: string }) => Promise<void>
