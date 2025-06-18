@@ -2,9 +2,14 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
+  console.log("req_method", req.method);
   res.setHeader("Access-Control-Allow-Origin", "*"); // ← 全部許可
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET, POST, PUT, DELETE, OPTIONS"
+  );
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
   switch (req.method) {
     case "GET":
       // Read（読み取り）
@@ -22,6 +27,8 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
       // Delete（削除）
       res.status(200).json({ message: "Data deleted" });
       break;
+    case "OPTIONS":
+      res.status(200).json({ message: "Data options" });
     default:
       res.setHeader("Allow", ["GET", "POST", "PUT", "DELETE"]);
       res.status(405).end(`Method ${req.method} Not Allowed`);

@@ -28,6 +28,7 @@ export async function login(formData: FormData) {
       httpOnly: true,
       // path: "/dev-3d.polyuse.xyz",
       path: "/",
+      domain: "localhost",
     });
   } else {
     console.log("not cookie::");

@@ -11,6 +11,7 @@ export async function POST(request: Request) {
     httpOnly: true,
     // path: "/dev-3d.polyuse.xyz",
     path: "/",
+    domain: "localhost",
   });
 
   return NextResponse.json({ message: "Cookie set" });
