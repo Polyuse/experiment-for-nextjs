@@ -26,8 +26,8 @@ export async function login(formData: FormData) {
     const cookieStore = cookies();
     (await cookieStore).set("tokenId", data?.session.access_token, {
       httpOnly: true,
-      // path: "/dev-3d.polyuse.xyz",
-      path: "/",
+      path: "/dev-3d.polyuse.xyz",
+      // path: "/",
     });
   } else {
     console.log("not cookie::");

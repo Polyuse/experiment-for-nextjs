@@ -9,8 +9,8 @@ export async function POST(request: Request) {
 
   (await cookieStore).set(name, id, {
     httpOnly: true,
-    // path: "/dev-3d.polyuse.xyz",
-    path: "/",
+    path: "/dev-3d.polyuse.xyz",
+    // path: "/",
   });
 
   return NextResponse.json({ message: "Cookie set" });
