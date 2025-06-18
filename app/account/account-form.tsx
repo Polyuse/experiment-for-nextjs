@@ -1,76 +1,88 @@
-'use client'
-import { useCallback, useEffect, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
-import { type User } from '@supabase/supabase-js'
-import Avatar from './avatar'
+"use client";
+import { useCallback, useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+import { type User } from "@supabase/supabase-js";
+import Avatar from "./avatar";
 
 export default function AccountForm({ user }: { user: User | null }) {
-  const supabase = createClient()
-  const [loading, setLoading] = useState(true)
-  const [fullname, setFullname] = useState<string | null>(null)
-  const [username, setUsername] = useState<string | null>(null)
-  const [website, setWebsite] = useState<string | null>(null)
-  const [avatar_url, setAvatarUrl] = useState<string | null>(null)
+  const supabase = createClient();
+  const [loading, setLoading] = useState(true);
+  const [fullname, setFullname] = useState<string | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
+  const [website, setWebsite] = useState<string | null>(null);
+  const [avatar_url, setAvatarUrl] = useState<string | null>(null);
 
   const getProfile = useCallback(async () => {
     try {
-      setLoading(true)
+      setLoading(true);
 
       const { data, error, status } = await supabase
-        .from('profiles')
-        .select(`full_name, username, website, avatar_url`)
-        .eq('id', user?.id)
-        .single()
+        .from("profiles")
+        .select(`full_name, username, website, avatar_url, organization_id`)
+        .eq("id", user?.id)
+        .single();
 
       if (error && status !== 406) {
-        console.log(error)
-        throw error
+        console.log(error);
+        throw error;
       }
-
+      const res = await fetch("/api/set-cookie", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: data?.organization_id }), // ←ここで送る値
+      });
+      if (res.ok) {
+        const data = await res.json();
+        console.log(data.message); // => "Cookie set"
+      } else {
+        console.error("Failed to set cookie");
+      }
       if (data) {
-        setFullname(data.full_name)
-        setUsername(data.username)
-        setWebsite(data.website)
-        setAvatarUrl(data.avatar_url)
+        setFullname(data.full_name);
+        setUsername(data.username);
+        setWebsite(data.website);
+        setAvatarUrl(data.avatar_url);
       }
     } catch (error) {
-      alert('Error loading user data!'+error)
+      alert("Error loading user data!" + error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }, [user, supabase])
+  }, [user, supabase]);
 
   useEffect(() => {
-    getProfile()
-  }, [user, getProfile])
+    getProfile();
+  }, [user, getProfile]);
 
   async function updateProfile({
     username,
     website,
     avatar_url,
   }: {
-    username: string | null
-    fullname: string | null
-    website: string | null
-    avatar_url: string | null
+    username: string | null;
+    fullname: string | null;
+    website: string | null;
+    avatar_url: string | null;
   }) {
     try {
-      setLoading(true)
+      setLoading(true);
 
-      const { error } = await supabase.from('profiles').upsert({
+      const { error } = await supabase.from("profiles").upsert({
         id: user?.id as string,
         full_name: fullname,
         username,
         website,
         avatar_url,
         updated_at: new Date().toISOString(),
-      })
-      if (error) throw error
-      alert('Profile updated!')
+      });
+      if (error) throw error;
+      alert("Profile updated!");
     } catch (error) {
-      alert('Error updating the data!'+error)
+      alert("Error updating the data!" + error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -81,8 +93,8 @@ export default function AccountForm({ user }: { user: User | null }) {
         url={avatar_url}
         size={150}
         onUpload={(url) => {
-          setAvatarUrl(url)
-          updateProfile({ fullname, username, website, avatar_url: url })
+          setAvatarUrl(url);
+          updateProfile({ fullname, username, website, avatar_url: url });
         }}
       />
       <div>
@@ -94,7 +106,7 @@ export default function AccountForm({ user }: { user: User | null }) {
         <input
           id="fullName"
           type="text"
-          value={fullname || ''}
+          value={fullname || ""}
           onChange={(e) => setFullname(e.target.value)}
         />
       </div>
@@ -103,7 +115,7 @@ export default function AccountForm({ user }: { user: User | null }) {
         <input
           id="username"
           type="text"
-          value={username || ''}
+          value={username || ""}
           onChange={(e) => setUsername(e.target.value)}
         />
       </div>
@@ -112,7 +124,7 @@ export default function AccountForm({ user }: { user: User | null }) {
         <input
           id="website"
           type="url"
-          value={website || ''}
+          value={website || ""}
           onChange={(e) => setWebsite(e.target.value)}
         />
       </div>
@@ -120,10 +132,12 @@ export default function AccountForm({ user }: { user: User | null }) {
       <div>
         <button
           className="button primary block"
-          onClick={() => updateProfile({ fullname, username, website, avatar_url })}
+          onClick={() =>
+            updateProfile({ fullname, username, website, avatar_url })
+          }
           disabled={loading}
         >
-          {loading ? 'Loading ...' : 'Update'}
+          {loading ? "Loading ..." : "Update"}
         </button>
       </div>
 
@@ -135,5 +149,5 @@ export default function AccountForm({ user }: { user: User | null }) {
         </form>
       </div>
     </div>
-  )
+  );
 }
