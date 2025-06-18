@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { type User } from "@supabase/supabase-js";
 import Avatar from "./avatar";
+import { testParameUrl } from "@/utils/base";
 
 export default function AccountForm({ user }: { user: User | null }) {
   const supabase = createClient();
@@ -31,7 +32,10 @@ export default function AccountForm({ user }: { user: User | null }) {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ id: data?.organization_id }), // ←ここで送る値
+        body: JSON.stringify({
+          name: "current_organization_id",
+          id: data?.organization_id,
+        }), // ←ここで送る値
       });
       if (res.ok) {
         const data = await res.json();
@@ -85,6 +89,10 @@ export default function AccountForm({ user }: { user: User | null }) {
       setLoading(false);
     }
   }
+
+  const openParame = () => {
+    window.open(testParameUrl, "_self");
+  };
 
   return (
     <div className="form-widget">
@@ -147,6 +155,11 @@ export default function AccountForm({ user }: { user: User | null }) {
             Sign out
           </button>
         </form>
+      </div>
+      <div>
+        <button className="button primary block" onClick={() => openParame()}>
+          {"パラメ"}
+        </button>
       </div>
     </div>
   );
