@@ -59,4 +59,4 @@ jobs:
           REGION: ${{ secrets.DEV_GCP_REGION }}
         run: |
           echo "✅ Preview should be available at:"
-          echo "https://preview-${{ steps.sanitize.outputs.branch }}-${PROJECT_ID//[!a-zA-Z0-9]/}-${REGION}.a.run.app"
+          echo "https://preview-${{ steps.sanitize.outputs.branch }}-${PROJECT_ID//[!a-zA-Z0-9]/}-"$(echo $REGION)"".a.run.app"
