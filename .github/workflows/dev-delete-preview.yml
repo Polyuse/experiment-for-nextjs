@@ -1,4 +1,4 @@
-name: Delete Preview and Image (Artifact Registry)
+name: Delete Preview and Image (Container Registry)
 
 on:
   pull_request:
@@ -17,7 +17,6 @@ jobs:
     env:
       PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
       REGION: asia-northeast1  # 公開OK
-      REPOSITORY: gcr.io  # Artifact Registry のリポジトリ名
 
     steps:
       - name: Determine deleted or merged branch name
@@ -47,12 +46,12 @@ jobs:
             --platform managed \
             --quiet || echo "⚠️ Service not found, skipping."
 
-      - name: Delete container image from Artifact Registry
+      - name: Delete image from Container Registry
         run: |
-          IMAGE_PATH=${REGION}-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/nextjs-preview-${{ steps.sanitize.outputs.branch }}
-          echo "🗑️ Deleting image and all tags: $IMAGE_PATH"
-          gcloud artifacts docker images delete $IMAGE_PATH \
-            --quiet --delete-tags || echo "⚠️ Image not found, skipping."
+          IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-${{ steps.sanitize.outputs.branch }}
+          echo "🗑️ Deleting image and all tags: $IMAGE_NAME"
+          gcloud container images delete $IMAGE_NAME \
+            --quiet --force-delete-tags || echo "⚠️ Image not found or already deleted."
 
       - name: Confirm Deletion
         run: |
