@@ -56,7 +56,7 @@ jobs:
       - name: Output Preview URL
         env:
           PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
-          REGION: ${{ secrets.DEV_GCP_REGION }}
+          REGION: asia-northeast1
         run: |
           echo "✅ Preview should be available at:"
           printf "https://preview-%s-%s-%s.a.run.app\n" \
