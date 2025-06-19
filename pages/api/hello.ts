@@ -8,7 +8,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     "Access-Control-Allow-Methods",
     "GET, POST, PUT, DELETE, OPTIONS"
   );
-  console.log("test");
+  console.log("tests");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   switch (req.method) {
