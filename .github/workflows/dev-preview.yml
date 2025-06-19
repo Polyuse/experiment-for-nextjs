@@ -53,10 +53,13 @@ jobs:
             --allow-unauthenticated \
             --port 8080
 
-      - name: Output Preview URL  # ✅ 修正: env で使えるようにしてURL構築
+      - name: Output Preview URL
         env:
           PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
           REGION: ${{ secrets.DEV_GCP_REGION }}
         run: |
           echo "✅ Preview should be available at:"
-          echo "https://preview-${{ steps.sanitize.outputs.branch }}-${PROJECT_ID//[!a-zA-Z0-9]/}-"$(echo $REGION)"".a.run.app"
+          printf "https://preview-%s-%s-%s.a.run.app\n" \
+            "${{ steps.sanitize.outputs.branch }}" \
+            "${PROJECT_ID//[!a-zA-Z0-9]/}" \
+            "$(echo $REGION)"
