@@ -25,7 +25,9 @@ jobs:
           credentials_json: ${{ secrets.DEV_GCP_SA_KEY }}
 
       - name: Set gcloud project  # ✅ 修正: 直接 secrets 参照
-        run: gcloud config set project "${{ secrets.DEV_GCP_PROJECT_ID }}"
+        env:
+          PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
+        run: gcloud config set project "$PROJECT_ID"
 
       - name: Build Docker image  # ✅ 修正: 環境変数を明示的にセット
         env:
