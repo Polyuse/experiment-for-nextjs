@@ -48,10 +48,31 @@ jobs:
 
       - name: Delete image from Container Registry
         run: |
-          IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-${{ steps.sanitize.outputs.branch }}
-          echo "🗑️ Deleting image and all tags: $IMAGE_NAME"
-          gcloud container images delete $IMAGE_NAME \
-            --quiet --force-delete-tags || echo "⚠️ Image not found or already deleted."
+          IMAGE_BASE="gcr.io/${{ env.PROJECT_ID }}/nextjs-preview-${{ steps.sanitize.outputs.branch }}"
+          echo "🧼 Target image base: $IMAGE_BASE"
+
+          # 1. イメージが存在するか確認し、存在するタグを取得
+          TAGS=$(gcloud container images list-tags $IMAGE_BASE \
+            --format='get(tags)' \
+            --limit=100 2>/dev/null | tr ';' '\n' | grep -v '^$' || true)
+
+          if [ -z "$TAGS" ]; then
+            echo "⚠️ No tags found for $IMAGE_BASE. Skipping deletion."
+          else
+            echo "🔍 Found tags:"
+            echo "$TAGS"
+
+            # 2. すべてのタグに対して削除処理
+            for TAG in $TAGS; do
+              echo "🗑️ Deleting image: $IMAGE_BASE:$TAG"
+              gcloud container images delete "$IMAGE_BASE:$TAG" \
+                --quiet --force-delete-tags || echo "⚠️ Failed to delete tag: $TAG"
+            done
+          fi
+
+          # 3. イメージ本体も削除
+          echo "🧹 Deleting image base: $IMAGE_BASE"
+          gcloud container images delete "$IMAGE_BASE" --quiet || echo "⚠️ Image base not deleted or already gone."
 
       - name: Confirm Deletion
         run: |
