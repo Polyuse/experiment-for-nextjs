@@ -4,10 +4,6 @@ on:
   pull_request:
     branches: [develop]
 
-env:
-  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-  REGION: ${{ secrets.GCP_REGION }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -28,17 +24,22 @@ jobs:
         with:
           credentials_json: ${{ secrets.DEV_GCP_SA_KEY }}
 
-      - name: Set gcloud project
-        run: gcloud config set project $PROJECT_ID
+      - name: Set gcloud project  # ✅ 修正: 直接 secrets 参照
+        run: gcloud config set project "${{ secrets.DEV_GCP_PROJECT_ID }}"
 
-      - name: Build Docker image
+      - name: Build Docker image  # ✅ 修正: 環境変数を明示的にセット
+        env:
+          PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
         run: |
           IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-${{ steps.sanitize.outputs.branch }}
           docker build -t $IMAGE_NAME .
           gcloud auth configure-docker
           docker push $IMAGE_NAME
 
-      - name: Deploy to Cloud Run
+      - name: Deploy to Cloud Run  # ✅ 修正: envブロックで REGION を安全に
+        env:
+          PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
+          REGION: ${{ secrets.DEV_GCP_REGION }}
         run: |
           SERVICE_NAME=preview-${{ steps.sanitize.outputs.branch }}
           IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-${{ steps.sanitize.outputs.branch }}
@@ -50,7 +51,10 @@ jobs:
             --allow-unauthenticated \
             --port 8080
 
-      - name: Output Preview URL
+      - name: Output Preview URL  # ✅ 修正: env で使えるようにしてURL構築
+        env:
+          PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
+          REGION: ${{ secrets.DEV_GCP_REGION }}
         run: |
           echo "✅ Preview should be available at:"
           echo "https://preview-${{ steps.sanitize.outputs.branch }}-${PROJECT_ID//[!a-zA-Z0-9]/}-${REGION}.a.run.app"
