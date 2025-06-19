@@ -58,8 +58,4 @@ jobs:
           PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
           REGION: asia-northeast1
         run: |
-          echo "✅ Preview should be available at:"
-          printf "https://preview-%s-%s-%s.a.run.app\n" \
-            "${{ steps.sanitize.outputs.branch }}" \
-            "${PROJECT_ID//[!a-zA-Z0-9]/}" \
-            "$(echo $REGION)"
+          echo "### ✅ [Preview URL](https://preview-${{ steps.sanitize.outputs.branch }}-${PROJECT_ID//[!a-zA-Z0-9]/}-${REGION}.a.run.app)" >> $GITHUB_STEP_SUMMARY
