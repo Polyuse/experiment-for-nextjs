@@ -1,25 +1,36 @@
 name: Delete Preview and Image
 
 on:
+  pull_request:
+    types: [closed]
   delete:
     branches:
       - '**'
 
 jobs:
   delete:
+    if: |
+      github.event_name == 'delete' ||
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
 
     env:
       PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
-      REGION: asia-northeast1  # 機密ではないのでハードコードでOK
+      REGION: asia-northeast1  # 公開情報なのでOK
 
     steps:
-      - name: Sanitize deleted branch name
+      - name: Determine deleted or merged branch name
         id: sanitize
         run: |
-          RAW_BRANCH="${{ github.event.ref }}"
+          if [ "${{ github.event_name }}" = "delete" ]; then
+            RAW_BRANCH="${{ github.event.ref }}"
+          else
+            RAW_BRANCH="${{ github.event.pull_request.head.ref }}"
+          fi
+
           SANITIZED_BRANCH=$(echo "$RAW_BRANCH" | tr '/' '-' | tr -cd 'a-zA-Z0-9\-')
           echo "branch=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
+          echo "🔍 Target branch: $SANITIZED_BRANCH"
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1
@@ -39,8 +50,9 @@ jobs:
         run: |
           IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-${{ steps.sanitize.outputs.branch }}
           echo "🗑️ Deleting image and all tags: $IMAGE_NAME"
-          gcloud container images delete $IMAGE_NAME --quiet --force-delete-tags || echo "⚠️ Image not found, skipping."
+          gcloud container images delete $IMAGE_NAME \
+            --quiet --force-delete-tags || echo "⚠️ Image not found, skipping."
 
       - name: Confirm Deletion
         run: |
-          echo "✅ Preview environment deleted for branch: ${{ github.event.ref }}"
+          echo "✅ Successfully cleaned up preview for branch: ${{ steps.sanitize.outputs.branch }}"
