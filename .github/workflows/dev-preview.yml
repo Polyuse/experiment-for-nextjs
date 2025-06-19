@@ -8,6 +8,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
+      REGION: asia-northeast1  # 機密ではないので secrets から外す
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -24,24 +28,14 @@ jobs:
         with:
           credentials_json: ${{ secrets.DEV_GCP_SA_KEY }}
 
-      - name: Set gcloud project  # ✅ 修正: 直接 secrets 参照
-        env:
-          PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
-        run: gcloud config set project "$PROJECT_ID"
-
-      - name: Build Docker image  # ✅ 修正: 環境変数を明示的にセット
-        env:
-          PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
+      - name: Build and push Docker image
         run: |
           IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-${{ steps.sanitize.outputs.branch }}
           docker build -t $IMAGE_NAME .
           gcloud auth configure-docker
           docker push $IMAGE_NAME
 
-      - name: Deploy to Cloud Run  # ✅ 修正: envブロックで REGION を安全に
-        env:
-          PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
-          REGION: ${{ secrets.DEV_GCP_REGION }}
+      - name: Deploy to Cloud Run
         run: |
           SERVICE_NAME=preview-${{ steps.sanitize.outputs.branch }}
           IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-${{ steps.sanitize.outputs.branch }}
@@ -53,9 +47,11 @@ jobs:
             --allow-unauthenticated \
             --port 8080
 
-      - name: Output Preview URL
-        env:
-          PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
-          REGION: asia-northeast1
+      - name: Output Preview URL to Logs (masked-safe)
+        run: |
+          echo "✅ Preview URL (log-safe):"
+          echo "https://preview-${{ steps.sanitize.outputs.branch }}-${PROJECT_ID//[!a-zA-Z0-9]/}-x${REGION}x.a.run.app"
+
+      - name: Output Preview URL to Summary (clickable)
         run: |
           echo "### ✅ [Preview URL](https://preview-${{ steps.sanitize.outputs.branch }}-${PROJECT_ID//[!a-zA-Z0-9]/}-${REGION}.a.run.app)" >> $GITHUB_STEP_SUMMARY
