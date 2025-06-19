@@ -1,44 +1,56 @@
-
 name: Deploy Preview to Cloud Run
 
 on:
   pull_request:
-    branches: [ develop ]
+    branches: [develop]
+
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: ${{ secrets.GCP_REGION }}
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
-      REGION: ${{ secrets.DEV_GCP_REGION }}
-    steps:
-      - uses: actions/checkout@v3
 
-      - name: Set up Docker
-        uses: docker/setup-buildx-action@v3
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Sanitize branch name
+        id: sanitize
+        run: |
+          RAW_BRANCH="${{ github.head_ref }}"
+          SANITIZED_BRANCH=$(echo "$RAW_BRANCH" | tr '/' '-' | tr -cd 'a-zA-Z0-9\-')
+          echo "branch=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
 
       - name: Authenticate with Google Cloud
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Set gcloud CLI project
+      - name: Set gcloud project
         run: gcloud config set project $PROJECT_ID
 
-      - name: Build and push Docker image
+      - name: Build Docker image
         run: |
-          BRANCH=$(echo ${{ github.head_ref }} | tr '/' '-')
-          IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-$BRANCH
+          IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-${{ steps.sanitize.outputs.branch }}
           docker build -t $IMAGE_NAME .
           gcloud auth configure-docker
           docker push $IMAGE_NAME
 
       - name: Deploy to Cloud Run
         run: |
-          SERVICE_NAME=preview-${{ github.head_ref }}
+          SERVICE_NAME=preview-${{ steps.sanitize.outputs.branch }}
+          IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-${{ steps.sanitize.outputs.branch }}
+
           gcloud run deploy $SERVICE_NAME \
-            --image gcr.io/$PROJECT_ID/nextjs-preview-${{ github.head_ref }} \
+            --image $IMAGE_NAME \
             --region $REGION \
             --platform managed \
             --allow-unauthenticated \
             --port 8080
+
+      - name: Output Preview URL
+        run: |
+          echo "✅ Preview should be available at:"
+          echo "https://preview-${{ steps.sanitize.outputs.branch }}-${PROJECT_ID//[!a-zA-Z0-9]/}-${REGION}.a.run.app"
