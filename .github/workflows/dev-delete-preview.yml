@@ -1,0 +1,46 @@
+name: Delete Preview and Image
+
+on:
+  delete:
+    branches:
+      - '**'
+
+jobs:
+  delete:
+    runs-on: ubuntu-latest
+
+    env:
+      PROJECT_ID: ${{ secrets.DEV_GCP_PROJECT_ID }}
+      REGION: asia-northeast1  # 機密ではないのでハードコードでOK
+
+    steps:
+      - name: Sanitize deleted branch name
+        id: sanitize
+        run: |
+          RAW_BRANCH="${{ github.event.ref }}"
+          SANITIZED_BRANCH=$(echo "$RAW_BRANCH" | tr '/' '-' | tr -cd 'a-zA-Z0-9\-')
+          echo "branch=$SANITIZED_BRANCH" >> $GITHUB_OUTPUT
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.DEV_GCP_SA_KEY }}
+
+      - name: Delete Cloud Run preview service
+        run: |
+          SERVICE_NAME=preview-${{ steps.sanitize.outputs.branch }}
+          echo "🗑️ Deleting Cloud Run service: $SERVICE_NAME"
+          gcloud run services delete $SERVICE_NAME \
+            --region $REGION \
+            --platform managed \
+            --quiet || echo "⚠️ Service not found, skipping."
+
+      - name: Delete container image from GCR
+        run: |
+          IMAGE_NAME=gcr.io/$PROJECT_ID/nextjs-preview-${{ steps.sanitize.outputs.branch }}
+          echo "🗑️ Deleting image and all tags: $IMAGE_NAME"
+          gcloud container images delete $IMAGE_NAME --quiet --force-delete-tags || echo "⚠️ Image not found, skipping."
+
+      - name: Confirm Deletion
+        run: |
+          echo "✅ Preview environment deleted for branch: ${{ github.event.ref }}"
