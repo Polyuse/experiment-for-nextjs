@@ -41,18 +41,18 @@ jobs:
         run: |
           SERVICE_NAME=preview-${{ steps.sanitize.outputs.branch }}
           echo "🗑️ Deleting Cloud Run service: $SERVICE_NAME"
-          gcloud run services delete $SERVICE_NAME \
-            --region $REGION \
+          gcloud run services delete "$SERVICE_NAME" \
+            --region "$REGION" \
             --platform managed \
             --quiet || echo "⚠️ Service not found, skipping."
 
       - name: Delete image from Container Registry
         run: |
-          IMAGE_BASE="gcr.io/${{ env.PROJECT_ID }}/nextjs-preview-${{ steps.sanitize.outputs.branch }}"
+          IMAGE_BASE="gcr.io/${PROJECT_ID}/nextjs-preview-${{ steps.sanitize.outputs.branch }}"
           echo "🧼 Target image base: $IMAGE_BASE"
 
-          # 1. イメージが存在するか確認し、存在するタグを取得
-          TAGS=$(gcloud container images list-tags $IMAGE_BASE \
+          # 1. 画像のタグ一覧を取得
+          TAGS=$(gcloud container images list-tags "$IMAGE_BASE" \
             --format='get(tags)' \
             --limit=100 2>/dev/null | tr ';' '\n' | grep -v '^$' || true)
 
@@ -62,7 +62,7 @@ jobs:
             echo "🔍 Found tags:"
             echo "$TAGS"
 
-            # 2. すべてのタグに対して削除処理
+            # 2. 各タグを削除
             for TAG in $TAGS; do
               echo "🗑️ Deleting image: $IMAGE_BASE:$TAG"
               gcloud container images delete "$IMAGE_BASE:$TAG" \
@@ -70,7 +70,7 @@ jobs:
             done
           fi
 
-          # 3. イメージ本体も削除
+          # 3. タグがなくなった後、ベースイメージも削除
           echo "🧹 Deleting image base: $IMAGE_BASE"
           gcloud container images delete "$IMAGE_BASE" --quiet || echo "⚠️ Image base not deleted or already gone."
 
